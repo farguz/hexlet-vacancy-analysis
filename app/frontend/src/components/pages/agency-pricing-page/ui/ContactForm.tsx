@@ -1,9 +1,7 @@
 import { Title, Stack, TextInput, Button, Text } from "@mantine/core";
-import * as yup from "yup";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler, type UseFormRegister, type FieldErrors } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-
-// Схема валидации формы
+import { contactFormSchema } from "./validation/contactFormValidation";
 
 export interface ContactFormData {
  companyName: string;
@@ -12,33 +10,40 @@ export interface ContactFormData {
  phone: string;
 }
 
-const phoneRegExp = /^\+7(?:[()\s-]*\d){10}$/;
+type FormInputProps = {
+ id: number;
+ placeholder: string;
+ fieldName: keyof ContactFormData; 
+ type?: string;
+};
 
-const contactFormSchema = yup.object().shape({
- companyName: yup
-  .string()
-  .min(3, "Название компании должно содержать не менее 3 символов")
-  .max(100, "Название компании не должно превышать 100 символов")
-  .required('Поле "Название компании" обязательно для заполнения'),
-
- fullName: yup
-  .string()
-  .min(3, "Ваше имя должно содержать не менее 3 символов")
-  .max(100, "Ваше имя не должно превышать 100 символов")
-  .required('Поле "Ваше имя" обязательно для заполнения'),
-
- email: yup
-  .string()
-  .email("Введите корректный Email адрес")
-  .required('Поле "Email" обязательно для заполнения'),
-
- phone: yup
-  .string()
-  .required('Поле "Телефон" обязательно для заполнения')
-  .matches(phoneRegExp, "Введите корректный номер телефона, начинающийся с +7"),
-});
-
-// сам компонент
+const FormField = ({ 
+  placeholder, 
+  fieldName, 
+  type = "text", 
+  register, 
+  errors 
+}: { 
+  placeholder: string, 
+  fieldName: keyof ContactFormData, 
+  type?: string,
+  register: UseFormRegister<ContactFormData>,
+  errors: FieldErrors<ContactFormData>
+}) => {
+ return (
+  <TextInput
+   type={type}
+   placeholder={placeholder}
+   size="lg"
+   classNames={{
+    input:
+     "!bg-[#1A2F4B] !text-white !border-[#4ECDC4] !placeholder-gray-500 !rounded-lg",
+   }}
+   {...register(fieldName)}
+   error={errors[fieldName]?.message}
+  />
+ );
+};
 
 const ContactForm = () => {
  const {
@@ -56,58 +61,36 @@ const ContactForm = () => {
   },
  });
 
- const onSubmit: SubmitHandler<ContactFormData> = () => {
+ const onSubmit: SubmitHandler<ContactFormData> = (data) => {
+  console.log(data);
   reset();
  };
+
+ const dataForInputs: FormInputProps[] = [
+  { id: 1, placeholder: "Название компании", fieldName: "companyName" },
+  { id: 2, placeholder: "Ваше имя", fieldName: "fullName" },
+  { id: 3, placeholder: "Email", fieldName: "email", type: "email" },
+  { id: 4, placeholder: "Телефон", fieldName: "phone", type: "tel" },
+ ];
 
  return (
   <Stack>
    <Title order={2} c="white" mb="xl" ta="left">
     Оставить заявку
    </Title>
+   
    <Stack component="form" onSubmit={handleSubmit(onSubmit)} gap="md">
-    <TextInput
-     placeholder="Название компании"
-     size="lg"
-     classNames={{
-      input:
-       "!bg-[#1A2F4B] !text-white !border-[#4ECDC4] !placeholder-gray !rounded-lg",
-     }}
-     {...register("companyName")}
-     error={errors.companyName?.message}
-    />
-    <TextInput
-     placeholder="Ваше имя"
-     size="lg"
-     classNames={{
-      input:
-       "!bg-[#1A2F4B] !text-white !border-[#4ECDC4] !placeholder-gray !rounded-lg",
-     }}
-     {...register("fullName")}
-     error={errors.fullName?.message}
-    />
-    <TextInput
-     placeholder="Email"
-     type="email"
-     size="lg"
-     classNames={{
-      input:
-       "!bg-[#1A2F4B] !text-white !border-[#4ECDC4] !placeholder-gray !rounded-lg",
-     }}
-     {...register("email")}
-     error={errors.email?.message}
-    />
-    <TextInput
-     placeholder="Телефон"
-     type="tel"
-     size="lg"
-     classNames={{
-      input:
-       "!bg-[#1A2F4B] !text-white !border-[#4ECDC4] !placeholder-gray !rounded-lg",
-     }}
-     {...register("phone")}
-     error={errors.phone?.message}
-    />
+    {dataForInputs.map((input) => (
+     <FormField
+      key={input.id}
+      placeholder={input.placeholder}
+      fieldName={input.fieldName}
+      type={input.type}
+      register={register} 
+      errors={errors}    
+     />
+    ))}
+
     <Button
      variant="filled"
      type="submit"
@@ -119,6 +102,7 @@ const ContactForm = () => {
     >
      Отправить заявку
     </Button>
+    
     <Text c="dimmed" size="sm" ta="center" mt="md">
      Мы свяжемся с вами в течение 24 часов
     </Text>
@@ -128,3 +112,4 @@ const ContactForm = () => {
 };
 
 export default ContactForm;
+
